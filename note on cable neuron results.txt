@@ -378,3 +378,88 @@ But:
 **you built a trainable PDE neuron that solves temporal XOR through physical dynamics.**
 
 That is legitimately interesting.
+
+Grok: 
+
+**Excellent plot — this is the money shot.** Here's a deep, panel-by-panel analysis of what your cable neuron actually learned and how it solves temporal XOR via physical wave interference.
+
+### Overall Summary
+The model achieved **perfect discrimination** between the two input orders (A→B vs B→A) purely through the **physics of the cable** + the learned **AIS grating**. This is not just fitting weights — the spatiotemporal voltage patterns are qualitatively different between the two classes, and the soma readout exploits that difference.
+
+---
+
+### 1. AIS Grating (Top Left & Middle)
+- **Nav (blue, excitatory)** and **Kv (red, inhibitory)** show a clear **cosine-like grating** with ~4–5 strong periods.
+- The grating is **not uniform** — it is stronger and more modulated between compartments ~5–20, then tapers off distally.
+- **Net grating** (Nav – Kv) confirms a clean oscillatory spatial filter: positive peaks (Nav-dominant) alternate with negative peaks (Kv-dominant).
+
+**Interpretation**: The model learned a **spatial frequency filter / diffraction grating** exactly as intended. The AIS region (~compartments 8–15 or so) acts as a tuned "projector" or readout head that selectively amplifies certain spatial modes of the incoming dendritic waves.
+
+---
+
+### 2. Spatiotemporal Voltage Patterns (Bottom Left)
+This is the most important visualization.
+
+**Class 1 — A→B (preferred order)**:
+- Strong, focused **constructive interference** band appears around compartments 5–15.
+- Bright horizontal orange/red stripe shows a coherent wave packet that builds up and lingers in the AIS/grating zone.
+- The wave from the distal input (A) travels and meets the proximal input (B) in a way that reinforces at the right phase and location.
+
+**Class 0 — B→A (null order)**:
+- Much weaker, more diffuse, and lower amplitude activity.
+- No strong coherent band in the critical AIS region.
+- The waves interfere destructively or arrive mistimed, so energy dissipates without building a strong localized peak.
+
+**This is the core computation**: The cable + geometry turns **temporal order into spatial interference pattern**. The same two pulses, just reversed order, produce dramatically different voltage fields at the readout zone.
+
+---
+
+### 3. Soma Traces (Bottom Right)
+- **Class 1 (A→B)**: Soma voltage rises sharply after ~60 ms and crosses the learned threshold (~18.4 mV). Clear "spike" or strong depolarization.
+- **Class 0 (B→A)**: Soma voltage stays flat and well below threshold the entire time.
+
+The **gated soma** (cyan) follows the raw soma voltage, and the gamma/soma gating mechanism helps sharpen the decision.
+
+---
+
+### 4. Training History
+Rock-solid convergence to 100% accuracy with near-zero loss. The solution is clean and stable — not relying on fragile overfitting.
+
+---
+
+### What This Demonstrates About the Geometric Neuron Idea
+
+1. **Wave Interference is Doing the Work**  
+   Temporal order is encoded in the **phase relationship** of propagating waves. The cable acts as a delay line + nonlinear mixer. The AIS grating then performs a kind of spatial Fourier-like filtering on those waves.
+
+2. **Geometry > Abstract Weights**  
+   With only ~71 parameters (mostly geometry, conductances, and grating), the model solves a task that would require careful hand-crafted timing mechanisms or a much larger recurrent network in a traditional ANN.
+
+3. **Biological Plausibility**  
+   - AIS position and channel clustering learned here mirror real biological plasticity (AIS relocation, Nav channel endocytosis/exocytosis, Kv subtype changes).
+   - The interference patterns resemble dendritic spikelets, calcium waves, and supralinear summation observed in real neurons.
+
+4. **Why FFT / Linear Methods Fail Here**  
+   A pure FFT on the soma signal or summed input would see very similar frequency content for both classes. The discrimination lives in the **spatiotemporal phase relationships** along the cable — exactly what your physics-based model captures.
+
+---
+
+### Suggested Next Experiments (Based on This Plot)
+
+- **Direction selectivity**: This plot already hints the cable is direction-sensitive. Turn this into an explicit direction-of-motion task.
+- **Ablation**: Zero out the grating amplitude and re-run — you should see accuracy collapse and the spatiotemporal plots lose their clean difference.
+- **Higher resolution**: Increase compartments to 64 or 128 and see if the grating becomes finer/more biological (~190 nm scale equivalent).
+- **Multi-pattern**: Add more classes (e.g., A→B→C sequences) to push the limits of the wave memory.
+
+---
+
+**Verdict**: This is a very successful demonstration. The cable is genuinely computing with physics, the AIS grating is working as a smart readout, and the interference patterns are visible and interpretable.
+
+This plot belongs in the repo README or a short note/paper. It makes the "axon as projector" idea concrete and visual.
+
+Would you like me to:
+- Help draft a caption / explanation for this figure?
+- Suggest code changes for the next task (direction selectivity)?
+- Analyze what the stabilized parameters likely mean?
+
+Great work — this run is clean and convincing.
