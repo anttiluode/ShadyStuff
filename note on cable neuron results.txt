@@ -1,0 +1,380 @@
+E:\DocsHouse\758>python3.13 cable_neuron.py
+=======================================================
+BiologicalCableNeuron — semi-implicit PDE + AIS grating
+=======================================================
+Device : cuda
+Params : 71  (cable geometry + AIS + gamma + threshold)
+Trial  : 200 steps × 0.5 ms = 100 ms
+τ_m    ≈ 125 ms  (inter-pulse gap = 50 ms)
+
+Temporal XOR requires physical wave interference.
+A linear Fourier synthesizer cannot solve this task.
+The cable nonlinearity is the computation.
+
+ep 0000  loss 0.6918  acc 62.5%  best 62.5%  AIS@15.4  T=8.80
+ep 0050  loss 0.1033  acc 100.0%  best 100.0%  AIS@10.8  T=6.16
+ep 0100  loss 0.0224  acc 100.0%  best 100.0%  AIS@10.1  T=4.39
+ep 0150  loss 0.0052  acc 100.0%  best 100.0%  AIS@9.9  T=3.21
+ep 0200  loss 0.0009  acc 100.0%  best 100.0%  AIS@9.9  T=2.42
+ep 0201  loss 0.0009  acc 100.0%  best 100.0%  AIS@9.9  T=2.40
+ep 0202  loss 0.0009  acc 100.0%  best 100.0%  AIS@9.9  T=2.39
+ep 0203  loss 0.0008  acc 100.0%  best 100.0%  AIS@9.9  T=2.38
+ep 0204  loss 0.0008  acc 100.0%  best 100.0%  AIS@9.9  T=2.36
+ep 0205  loss 0.0008  acc 100.0%  best 100.0%  AIS@9.9  T=2.35
+ep 0206  loss 0.0008  acc 100.0%  best 100.0%  AIS@9.9  T=2.34
+ep 0207  loss 0.0007  acc 100.0%  best 100.0%  AIS@9.9  T=2.33
+ep 0208  loss 0.0007  acc 100.0%  best 100.0%  AIS@9.9  T=2.32
+ep 0209  loss 0.0007  acc 100.0%  best 100.0%  AIS@9.9  T=2.30
+ep 0210  loss 0.0006  acc 100.0%  best 100.0%  AIS@9.9  T=2.29
+ep 0211  loss 0.0006  acc 100.0%  best 100.0%  AIS@9.9  T=2.28
+ep 0212  loss 0.0006  acc 100.0%  best 100.0%  AIS@9.9  T=2.27
+ep 0213  loss 0.0006  acc 100.0%  best 100.0%  AIS@9.9  T=2.26
+ep 0214  loss 0.0006  acc 100.0%  best 100.0%  AIS@9.9  T=2.24
+ep 0215  loss 0.0005  acc 100.0%  best 100.0%  AIS@9.9  T=2.23
+ep 0216  loss 0.0005  acc 100.0%  best 100.0%  AIS@9.9  T=2.22
+ep 0217  loss 0.0005  acc 100.0%  best 100.0%  AIS@9.9  T=2.21
+ep 0218  loss 0.0005  acc 100.0%  best 100.0%  AIS@9.9  T=2.20
+ep 0219  loss 0.0005  acc 100.0%  best 100.0%  AIS@9.9  T=2.19
+ep 0220  loss 0.0004  acc 100.0%  best 100.0%  AIS@9.9  T=2.18
+ep 0221  loss 0.0004  acc 100.0%  best 100.0%  AIS@9.9  T=2.17
+ep 0222  loss 0.0004  acc 100.0%  best 100.0%  AIS@9.9  T=2.15
+ep 0223  loss 0.0004  acc 100.0%  best 100.0%  AIS@9.9  T=2.14
+ep 0224  loss 0.0004  acc 100.0%  best 100.0%  AIS@9.9  T=2.13
+ep 0225  loss 0.0004  acc 100.0%  best 100.0%  AIS@9.9  T=2.12
+ep 0226  loss 0.0004  acc 100.0%  best 100.0%  AIS@9.9  T=2.11
+ep 0227  loss 0.0003  acc 100.0%  best 100.0%  AIS@9.9  T=2.10
+ep 0228  loss 0.0003  acc 100.0%  best 100.0%  AIS@9.9  T=2.09
+ep 0229  loss 0.0003  acc 100.0%  best 100.0%  AIS@9.9  T=2.08
+ep 0230  loss 0.0003  acc 100.0%  best 100.0%  AIS@9.9  T=2.07
+ep 0231  loss 0.0003  acc 100.0%  best 100.0%  AIS@9.9  T=2.06
+ep 0232  loss 0.0003  acc 100.0%  best 100.0%  AIS@9.9  T=2.05
+ep 0233  loss 0.0003  acc 100.0%  best 100.0%  AIS@9.9  T=2.04
+ep 0234  loss 0.0003  acc 100.0%  best 100.0%  AIS@9.9  T=2.03
+ep 0235  loss 0.0002  acc 100.0%  best 100.0%  AIS@9.9  T=2.02
+ep 0236  loss 0.0002  acc 100.0%  best 100.0%  AIS@9.9  T=2.01
+ep 0237  loss 0.0002  acc 100.0%  best 100.0%  AIS@9.9  T=2.00
+ep 0238  loss 0.0002  acc 100.0%  best 100.0%  AIS@9.9  T=1.99
+ep 0239  loss 0.0002  acc 100.0%  best 100.0%  AIS@9.9  T=1.98
+ep 0240  loss 0.0002  acc 100.0%  best 100.0%  AIS@9.9  T=1.97
+ep 0241  loss 0.0002  acc 100.0%  best 100.0%  AIS@9.9  T=1.96
+ep 0242  loss 0.0002  acc 100.0%  best 100.0%  AIS@9.9  T=1.95
+ep 0243  loss 0.0002  acc 100.0%  best 100.0%  AIS@9.9  T=1.95
+ep 0244  loss 0.0002  acc 100.0%  best 100.0%  AIS@9.9  T=1.94
+ep 0245  loss 0.0002  acc 100.0%  best 100.0%  AIS@9.9  T=1.93
+ep 0246  loss 0.0002  acc 100.0%  best 100.0%  AIS@9.9  T=1.92
+ep 0247  loss 0.0002  acc 100.0%  best 100.0%  AIS@9.9  T=1.91
+ep 0248  loss 0.0001  acc 100.0%  best 100.0%  AIS@9.9  T=1.90
+ep 0249  loss 0.0001  acc 100.0%  best 100.0%  AIS@9.9  T=1.89
+ep 0250  loss 0.0001  acc 100.0%  best 100.0%  AIS@9.9  T=1.88
+ep 0251  loss 0.0001  acc 100.0%  best 100.0%  AIS@9.9  T=1.87
+ep 0252  loss 0.0001  acc 100.0%  best 100.0%  AIS@9.9  T=1.87
+ep 0253  loss 0.0001  acc 100.0%  best 100.0%  AIS@9.9  T=1.86
+ep 0254  loss 0.0001  acc 100.0%  best 100.0%  AIS@9.9  T=1.85
+ep 0255  loss 0.0001  acc 100.0%  best 100.0%  AIS@9.9  T=1.84
+ep 0256  loss 0.0001  acc 100.0%  best 100.0%  AIS@9.9  T=1.83
+ep 0257  loss 0.0001  acc 100.0%  best 100.0%  AIS@9.9  T=1.82
+ep 0258  loss 0.0001  acc 100.0%  best 100.0%  AIS@9.9  T=1.82
+ep 0259  loss 0.0001  acc 100.0%  best 100.0%  AIS@9.9  T=1.81
+ep 0260  loss 0.0001  acc 100.0%  best 100.0%  AIS@9.9  T=1.80
+ep 0261  loss 0.0001  acc 100.0%  best 100.0%  AIS@9.9  T=1.79
+ep 0262  loss 0.0001  acc 100.0%  best 100.0%  AIS@9.9  T=1.78
+ep 0263  loss 0.0001  acc 100.0%  best 100.0%  AIS@9.9  T=1.78
+ep 0264  loss 0.0001  acc 100.0%  best 100.0%  AIS@9.9  T=1.77
+ep 0265  loss 0.0001  acc 100.0%  best 100.0%  AIS@9.9  T=1.76
+ep 0266  loss 0.0001  acc 100.0%  best 100.0%  AIS@9.9  T=1.75
+ep 0267  loss 0.0001  acc 100.0%  best 100.0%  AIS@9.9  T=1.75
+ep 0268  loss 0.0001  acc 100.0%  best 100.0%  AIS@9.9  T=1.74
+ep 0269  loss 0.0001  acc 100.0%  best 100.0%  AIS@9.9  T=1.73
+ep 0270  loss 0.0001  acc 100.0%  best 100.0%  AIS@9.9  T=1.72
+ep 0271  loss 0.0001  acc 100.0%  best 100.0%  AIS@9.9  T=1.72
+ep 0272  loss 0.0001  acc 100.0%  best 100.0%  AIS@9.9  T=1.71
+ep 0273  loss 0.0001  acc 100.0%  best 100.0%  AIS@9.9  T=1.70
+ep 0274  loss 0.0001  acc 100.0%  best 100.0%  AIS@9.9  T=1.69
+ep 0275  loss 0.0001  acc 100.0%  best 100.0%  AIS@9.9  T=1.69
+ep 0276  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.68
+ep 0277  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.67
+ep 0278  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.67
+ep 0279  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.66
+ep 0280  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.65
+ep 0281  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.64
+ep 0282  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.64
+ep 0283  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.63
+ep 0284  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.62
+ep 0285  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.62
+ep 0286  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.61
+ep 0287  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.61
+ep 0288  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.60
+ep 0289  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.59
+ep 0290  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.59
+ep 0291  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.58
+ep 0292  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.57
+ep 0293  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.57
+ep 0294  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.56
+ep 0295  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.56
+ep 0296  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.55
+ep 0297  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.54
+ep 0298  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.54
+ep 0299  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.53
+ep 0300  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.53
+ep 0301  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.52
+ep 0302  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.51
+ep 0303  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.51
+ep 0304  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.50
+ep 0305  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.50
+ep 0306  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.49
+ep 0307  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.49
+ep 0308  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.48
+ep 0309  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.48
+ep 0310  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.47
+ep 0311  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.46
+ep 0312  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.46
+ep 0313  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.45
+ep 0314  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.45
+ep 0315  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.44
+ep 0316  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.44
+ep 0317  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.43
+ep 0318  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.43
+ep 0319  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.42
+ep 0320  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.42
+ep 0321  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.41
+ep 0322  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.41
+ep 0323  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.40
+ep 0324  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.40
+ep 0325  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.39
+ep 0326  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.39
+ep 0327  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.38
+ep 0328  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.38
+ep 0329  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.38
+ep 0330  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.37
+ep 0331  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.37
+ep 0332  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.36
+ep 0333  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.36
+ep 0334  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.35
+ep 0335  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.35
+ep 0336  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.34
+ep 0337  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.34
+ep 0338  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.34
+ep 0339  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.33
+ep 0340  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.33
+ep 0341  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.32
+ep 0342  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.32
+ep 0343  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.31
+ep 0344  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.31
+ep 0345  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.31
+ep 0346  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.30
+ep 0347  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.30
+ep 0348  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.29
+ep 0349  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.29
+ep 0350  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.29
+ep 0351  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.28
+ep 0352  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.28
+ep 0353  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.27
+ep 0354  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.27
+ep 0355  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.27
+ep 0356  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.26
+ep 0357  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.26
+ep 0358  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.26
+ep 0359  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.25
+ep 0360  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.25
+ep 0361  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.25
+ep 0362  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.24
+ep 0363  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.24
+ep 0364  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.23
+ep 0365  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.23
+ep 0366  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.23
+ep 0367  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.22
+ep 0368  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.22
+ep 0369  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.22
+ep 0370  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.21
+ep 0371  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.21
+ep 0372  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.21
+ep 0373  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.20
+ep 0374  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.20
+ep 0375  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.20
+ep 0376  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.20
+ep 0377  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.19
+ep 0378  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.19
+ep 0379  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.19
+ep 0380  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.18
+ep 0381  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.18
+ep 0382  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.18
+ep 0383  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.17
+ep 0384  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.17
+ep 0385  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.17
+ep 0386  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.16
+ep 0387  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.16
+ep 0388  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.16
+ep 0389  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.16
+ep 0390  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.15
+ep 0391  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.15
+ep 0392  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.15
+ep 0393  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.14
+ep 0394  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.14
+ep 0395  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.14
+ep 0396  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.14
+ep 0397  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.13
+ep 0398  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.13
+ep 0399  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.13
+ep 0400  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.13
+ep 0401  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.12
+ep 0402  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.12
+ep 0403  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.12
+ep 0404  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.12
+ep 0405  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.11
+ep 0406  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.11
+ep 0407  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.11
+ep 0408  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.11
+ep 0409  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.10
+ep 0410  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.10
+ep 0411  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.10
+ep 0412  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.10
+ep 0413  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.09
+ep 0414  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.09
+ep 0415  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.09
+ep 0416  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.09
+ep 0417  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.08
+ep 0418  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.08
+ep 0419  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.08
+ep 0420  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.08
+ep 0421  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.08
+ep 0422  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.07
+ep 0423  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.07
+ep 0424  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.07
+ep 0425  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.07
+ep 0426  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.06
+ep 0427  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.06
+ep 0428  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.06
+ep 0429  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.06
+ep 0430  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.06
+ep 0431  loss 0.0000  acc 100.0%  best 100.0%  AIS@9.9  T=1.05
+
+
+Yes — for the benchmark you set, you did it.
+
+What your log says:
+
+* **Temporal XOR solved**: `acc 100.0%`
+* Not just briefly — it reaches 100% by ~epoch 50 and stays there.
+* **Loss collapses** from `0.6918` to essentially `0.0000`.
+* **AIS center self-organizes** from `15.4 → 9.9`
+
+  * that’s interesting: it migrated toward the stimulus side, suggesting the model found an advantageous nonlinear “decision zone”.
+* **Threshold T anneals** from `8.8 → 1.29`
+
+  * meaning the readout became increasingly confident / separable.
+
+That means:
+
+your statement
+
+> “The cable nonlinearity is the computation”
+
+is supported **for this task**.
+
+A plain linear filter/Fourier system cannot solve temporal XOR because:
+
+[
+(A \rightarrow B) \neq (B \rightarrow A)
+]
+
+but linear systems are order-superposition machines:
+
+f(A+B)=f(A)+f(B)
+
+so they lose that ordering unless memory + nonlinearity interact.
+
+Your cable gives exactly that:
+
+1. **memory** (membrane time constant)
+2. **wave travel delay**
+3. **nonlinear sodium gate**
+4. **spatial interference**
+5. **thresholded readout**
+
+That’s enough.
+
+---
+
+What you have *not* proven yet:
+
+### 1. It might be memorizing one dataset
+
+Try generalization:
+
+```python
+# after training:
+test_acc = evaluate_on_new_random_batch(neuron, 1000)
+```
+
+Need ~100%.
+
+---
+
+### 2. Need ablations
+
+Kill parts one by one:
+
+```python
+g_Na = 0        # no sodium
+gamma = 0       # no oscillation
+uniform_d = 1   # no geometry
+```
+
+If accuracy drops:
+that proves each component matters.
+
+---
+
+### 3. Need robustness
+
+Add noise:
+
+```python
+I += 0.2 * torch.randn_like(I)
+```
+
+If still >95%, stronger result.
+
+---
+
+### 4. Need compare vs MLP
+
+Tiny baseline:
+
+```python
+MLP(input=T*64)
+```
+
+If your cable solves with fewer params / better OOD,
+that’s important.
+
+---
+
+Most interesting part to me:
+
+**AIS moved to ~10**.
+
+That suggests the model discovered a preferred nonlinear interaction point — almost like placing a transistor in a transmission line.
+
+That’s biologically plausible:
+axon initial segment
+really is the spike trigger zone.
+
+So your model “rediscovered” that.
+
+That’s cool.
+
+---
+
+My verdict:
+
+**yes, benchmark passed.**
+
+Not AGI.
+Not proof of brain theory.
+
+But:
+
+**you built a trainable PDE neuron that solves temporal XOR through physical dynamics.**
+
+That is legitimately interesting.
