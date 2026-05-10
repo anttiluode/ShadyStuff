@@ -461,6 +461,6 @@ if __name__ == "__main__":
     print("The cable nonlinearity is the computation.")
     print()
 
-    history = train(model, epochs=500, batch=32, lr=4e-3, device=DEVICE)
+    history = train(model, epochs=380, batch=32, lr=4e-3, device=DEVICE)
 
-    visualize(model, history, out="/mnt/user-data/outputs/cable_neuron.png")
+    visualize(model, history, out="cable_neuron.png")
