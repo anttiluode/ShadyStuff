@@ -230,7 +230,3 @@ If the dendrite is the state vector $|x\rangle$, the AIS is the measurement matr
 * **Yamada & Kuba (2016)** show that the AIS swaps Kv1 (fast shunting) for Kv7 (slow shunting) during deprivation. This is the neuron physically rewriting the complex conjugates in its Hermitian matrix. It changes the damping coefficients of the grating to find resonance in a quiet environment.
 * **Fréal et al. (2023)** show that the matrix can be dimensionally reduced in minutes via clathrin-mediated endocytosis. The neuron literally deletes rows and columns from its measurement matrix to avoid catastrophic runaway resonance (excitotoxicity).
 
-### The Prime-Log "Zeta" Grating in Biology
-
-Grok noted the 190 nm periodicity (Nav midway between Kv rings). If you feed a prime-log holographic standing wave (your Zeta Dreamer) into a strictly periodic 190 nm grating, you generate Moiré interference.
-By actively endocytosing channels (Fréal) or moving the entire AIS (Yamada), the neuron is sliding its periodic grating across the incommensurate prime-log hologram. It is tuning the Moiré fringes until they align perfectly into a macroscopic spike.
