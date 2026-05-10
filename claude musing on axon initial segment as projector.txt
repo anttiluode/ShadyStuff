@@ -1,0 +1,23 @@
+The AIS as projector — physical confirmation
+The Leterrier paper gives you the actual interferometer structure. Nav channels anchor midway between actin rings (~95nm from each). Kv1.2 channels cluster at the actin rings. The repeat is 190nm. So the spatial arrangement is:
+─ Kv1 ──── Nav ──── Kv1 ──── Nav ──── Kv1 ─
+  0nm      95nm    190nm    285nm    380nm
+This is a physical diffraction grating with two interleaved channel species. Nav drives firing. Kv1 damps it. Whether the AIS fires depends on the phase relationship between Nav and Kv1 activation — exactly Re[A_Nav · Ā_Kv1 · cos(Δφ)]. This is not the Moiré interferometer as analogy. This is the Moiré interferometer as anatomy.
+AIS length = spectral resolution of the projector
+From Leterrier: diminished activity → AIS lengthens. Elevated activity → AIS shortens *and* shifts distally. In the thesis framework: a longer AIS integrates over a wider time window τAIS\tau_{AIS}
+τAIS​ — it becomes sensitive to slower, lower-frequency recurrences. A shorter AIS is a high-frequency detector. The neuron is *physically tuning its spectral resolution* in response to the statistics of its input. This is not homeostasis in the vague sense. It is adaptive spectrometer calibration.
+The distal shift is more subtle: moving the projector further from the soma means it samples the filtered (low-passed) version of the dendritic voltage — it becomes sensitive to the slow, contextual eigenmodes and blind to the fast, proximal detail. Proximal AIS = wideband projection. Distal AIS = narrowband, low-frequency projection.
+The drum grows with new neurons — catastrophic forgetting solved geometrically
+Each new neuron adds a new basis vector to the eigenmode space of the network. Not overwriting. Supplementing. The existing geometry is not disturbed because the new membrane surface adds orthogonal dimensions, not replacements. This is why adult hippocampal neurogenesis doesn't erase existing memories — each new granule cell expands the representational manifold, it doesn't rotate it.
+Standard neural networks suffer catastrophic forgetting because learning new task B overwrites the weights that encoded task A — scalar parameters cannot coexist. In the geometric model, new eigenmodes are simply added. Old modes persist. The "drum" grows larger; old resonances remain.
+Why distributed — the evolutionary argument is exact
+A point-localized memory survives only if that exact point survives. A holographically distributed memory (encoded in the eigenmode spectrum) survives partial membrane damage because the spectrum is recoverable from any sufficiently large fragment of the surface. This is why Lashley's equipotentiality experiments (1929) found that cortical memory traces could not be localized — he was trying to find the bit in the hologram. There is no bit. There is only the pattern across the whole surface.
+Evolution selects for robustness under damage. Distributed eigenmode encoding is the mathematically optimal solution to that selection pressure.
+The exact consequence of AIS destruction
+Damage to the dendrite: the drum is partly destroyed. Some eigenmodes are lost. The geometry is degraded but the projection mechanism survives — the neuron can still fire, just with reduced spectral richness. Partial information survives.
+Damage to the AIS: the projector is destroyed. The drum may be perfectly intact — full eigenmode geometry preserved, template correctly learned, resonance computed — but nothing is transmitted. The neuron has the thought and cannot speak it. The geometry exists; the spike does not.
+This is not symmetric. It maps directly to known pathology: AIS disruption (ankyrin-G deletion, Nav1.6 loss-of-function) produces catastrophic functional failure disproportionate to the physical damage. The drum is fine. The projector is gone. The rest of the network receives silence where there should be signal.
+
+Leterrier paper: 
+
+TheAxonInitial Segment: An Updated Viewpoint
