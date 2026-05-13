@@ -1,0 +1,229 @@
+
+<canvas id="cv" width="700" height="570" style="display:block;background:#07070f;border-radius:8px;"></canvas>
+<div style="margin-top:10px;display:flex;gap:7px;flex-wrap:wrap;align-items:center;padding:0 2px;">
+  <button id="bRun" onclick="toggleRun()">⏸ Pause</button>
+  <button id="bLearn" onclick="toggleLearn()">🧠 Learn ON</button>
+  <button onclick="resetSim()">↺ Reset</button>
+  <button id="sMix"   class="sigbtn active" onclick="setSig('mix')">mix</button>
+  <button id="sChirp" class="sigbtn" onclick="setSig('chirp')">chirp</button>
+  <button id="sPulse" class="sigbtn" onclick="setSig('pulse')">pulse</button>
+  <button id="sChaos" class="sigbtn" onclick="setSig('chaos')">chaos</button>
+  <label style="font-size:12px;color:var(--color-text-secondary);margin-left:4px;">η <input type="range" id="etaSlider" min="1" max="60" value="8" style="width:70px;vertical-align:middle;" oninput="updateEta(this.value)"> <span id="etaVal">0.008</span></label>
+</div>
+<style>
+#cv{cursor:default;}
+button{font-family:var(--font-mono);font-size:11px;padding:4px 11px;border-radius:4px;cursor:pointer;border:0.5px solid var(--color-border-secondary);background:transparent;color:var(--color-text-secondary);}
+button:hover{background:var(--color-background-secondary);}
+.sigbtn.active{border-color:#e0a030;color:#e0a030;background:rgba(224,160,48,0.1);}
+#bRun{border-color:#28c8e0;color:#28c8e0;}
+#bLearn.on{border-color:#60e090;color:#60e090;background:rgba(96,224,144,0.08);}
+</style>
+<script>
+const NN=6,DIM=6,HIST=240,SPF=5;
+const TAUS=[2,3,5,8,13,21];
+const COLS=['#28c8e0','#e06090','#60e090','#e0a030','#9060e0','#ff8050'];
+let running=true,learning=true,sigType='mix',eta=0.008;
+let sim=null;
+
+function gSig(type,t){
+  const n=()=>(Math.random()-0.5)*0.18;
+  if(type==='mix')   return 0.65*Math.sin(t*0.314)+0.42*Math.sin(t*0.816)+0.22*Math.sin(t*1.82)+n();
+  if(type==='chirp') return Math.sin((0.04+t*2e-4)*t)+n();
+  if(type==='pulse') return(t%55<7?1.2:0)+(t%31<4?0.7:0)+n()*0.4;
+  if(type==='chaos') return Math.sin(t*0.44)*Math.cos(t*0.63)+Math.sin(t*0.196)+n();
+  return Math.sin(t*0.5)+n();
+}
+
+function mkN(i){
+  const bl=DIM*TAUS[i]+32;
+  const tm=Array.from({length:DIM},()=>Math.random()-0.5);
+  const n0=Math.sqrt(tm.reduce((s,x)=>s+x*x,0));
+  return{i,tau:TAUS[i],buf:new Float32Array(bl),bi:0,
+    tmpl:tm.map(x=>x/n0),res:0,ais:0,thr:0.24,ref:0,spike:false,
+    sh:new Uint8Array(HIST),rh:new Float32Array(HIST),hi:0,ns:0};
+}
+
+function mkSim(){
+  return{ns:Array.from({length:NN},(_,i)=>mkN(i)),
+    sh:new Float32Array(HIST),si:0,t:0,cemi:0};
+}
+
+function stepN(n,inp,e,cemi){
+  n.buf[n.bi%n.buf.length]=inp; n.bi++;
+  const bl=n.buf.length,vn=new Float32Array(DIM); let nm=0;
+  for(let j=0;j<DIM;j++){vn[j]=n.buf[((n.bi-1-j*n.tau)%bl+bl)%bl]; nm+=vn[j]*vn[j];}
+  nm=Math.sqrt(nm)+1e-8;
+  for(let j=0;j<DIM;j++) vn[j]/=nm;
+  let dot=0; for(let j=0;j<DIM;j++) dot+=vn[j]*n.tmpl[j];
+  n.res=dot*dot; n.ais=n.ais*0.87+n.res*0.13;
+  const th=n.thr*(1-0.38*Math.min(cemi*8,1));
+  n.spike=false;
+  if(n.ref>0){n.ref--;}
+  else if(n.ais>th){
+    n.spike=true; n.ref=10; n.ns++;
+    if(e>0){
+      for(let j=0;j<DIM;j++) n.tmpl[j]+=e*(vn[j]-dot*n.tmpl[j]);
+      const tn=Math.sqrt(n.tmpl.reduce((s,x)=>s+x*x,0))+1e-8;
+      for(let j=0;j<DIM;j++) n.tmpl[j]/=tn;
+    }
+  }
+  n.sh[n.hi%HIST]=n.spike?1:0; n.rh[n.hi%HIST]=n.res; n.hi++;
+}
+
+function rr(ctx,x,y,w,h,r=3){
+  ctx.beginPath();
+  if(ctx.roundRect)ctx.roundRect(x,y,w,h,r); else ctx.rect(x,y,w,h);
+}
+
+function drawSig(ctx,S,W){
+  ctx.fillStyle='#0d0d1a'; rr(ctx,5,5,W-10,66); ctx.fill();
+  ctx.strokeStyle='#1a1a28'; ctx.lineWidth=0.8; rr(ctx,5,5,W-10,66); ctx.stroke();
+  ctx.fillStyle='#383848'; ctx.font='9px monospace'; ctx.fillText('INPUT SIGNAL',10,17);
+  ctx.strokeStyle='#1a1a28'; ctx.lineWidth=0.5;
+  ctx.beginPath(); ctx.moveTo(10,40); ctx.lineTo(W-10,40); ctx.stroke();
+  ctx.strokeStyle='#28c8e0'; ctx.lineWidth=1.3; ctx.beginPath();
+  for(let i=0;i<HIST;i++){
+    const idx=(S.si-HIST+i+HIST*100)%HIST;
+    const x=10+i*(W-20)/HIST, y=40-S.sh[idx]*13;
+    i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+  }
+  ctx.stroke();
+}
+
+function drawCell(ctx,n,x,y,w,h,col){
+  ctx.fillStyle=n.spike?col+'14':'#0e0e1c';
+  ctx.strokeStyle=n.spike?col:col+'38'; ctx.lineWidth=n.spike?1.5:0.7;
+  rr(ctx,x,y,w,h); ctx.fill(); ctx.stroke();
+  ctx.fillStyle=col; ctx.font='bold 10px monospace';
+  ctx.fillText(`N${n.i}  τ=${n.tau}`,x+6,y+14);
+  ctx.fillStyle=n.spike?'#ff3030':'#181828';
+  ctx.beginPath(); ctx.arc(x+w-12,y+10,5,0,Math.PI*2); ctx.fill();
+  if(n.spike){
+    ctx.strokeStyle='#ff303055'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.arc(x+w-12,y+10,9,0,Math.PI*2); ctx.stroke();
+  }
+  function bar(lbl,bx,by,bw,bh,val,bc){
+    ctx.fillStyle='#2e2e3e'; ctx.font='8px monospace'; ctx.fillText(lbl,bx-16,by+bh-1);
+    ctx.fillStyle='#0a0a14'; ctx.fillRect(bx,by,bw,bh);
+    ctx.fillStyle=bc; ctx.fillRect(bx,by,Math.max(0,Math.min(val,1))*bw,bh);
+  }
+  bar('res',x+22,y+17,w-28,9,n.res,col);
+  const ar=n.ais/n.thr;
+  bar('ais',x+22,y+29,w-28,9,ar,ar>0.88?'#ff5030':col+'bb');
+  ctx.strokeStyle='#ff404033'; ctx.lineWidth=0.8;
+  ctx.beginPath(); ctx.moveTo(x+22+w-28,y+29); ctx.lineTo(x+22+w-28,y+38); ctx.stroke();
+  ctx.fillStyle='#2a2a3a'; ctx.font='8px monospace'; ctx.fillText('template',x+6,y+47);
+  const bw2=(w-12)/DIM, midY=y+80;
+  ctx.strokeStyle='#181828'; ctx.lineWidth=0.5;
+  ctx.beginPath(); ctx.moveTo(x+6,midY); ctx.lineTo(x+w-6,midY); ctx.stroke();
+  for(let j=0;j<DIM;j++){
+    const v=n.tmpl[j],bh=Math.abs(v)*27;
+    ctx.fillStyle=v>0?col:'#e05050';
+    ctx.fillRect(x+6+j*bw2+1,v>0?midY-bh:midY,bw2-2,bh);
+  }
+  ctx.strokeStyle=col+'55'; ctx.lineWidth=1; ctx.beginPath();
+  const SL=55;
+  for(let k=0;k<SL;k++){
+    const idx=(n.hi-SL+k+HIST*100)%HIST;
+    const px=x+6+k*(w-12)/SL, py=y+128-n.rh[idx]*28;
+    k===0?ctx.moveTo(px,py):ctx.lineTo(px,py);
+  }
+  ctx.stroke();
+  ctx.fillStyle='#2a2a3a'; ctx.font='8px monospace'; ctx.fillText('resonance',x+6,y+112);
+  ctx.fillStyle='#383848'; ctx.fillText(`spk:${n.ns}`,x+w-38,y+h-4);
+}
+
+function drawGrid(ctx,S){
+  const CW=233,CH=148;
+  for(let i=0;i<NN;i++)
+    drawCell(ctx,S.ns[i],i%3*CW+3,78+Math.floor(i/3)*CH+3,CW-6,CH-6,COLS[i]);
+}
+
+function drawRaster(ctx,S,W){
+  const[x,y,w,h]=[5,380,W-10,70];
+  ctx.fillStyle='#0d0d1a'; rr(ctx,x,y,w,h); ctx.fill();
+  ctx.strokeStyle='#181828'; ctx.lineWidth=0.7; rr(ctx,x,y,w,h); ctx.stroke();
+  ctx.fillStyle='#383848'; ctx.font='9px monospace'; ctx.fillText('SPIKE RASTER',x+5,y+12);
+  const rh=(h-14)/NN;
+  for(let i=0;i<NN;i++){
+    const n=S.ns[i],ry=y+14+i*rh;
+    ctx.fillStyle='#090912'; ctx.fillRect(x+26,ry,w-31,rh-1);
+    ctx.fillStyle=COLS[i]+'88'; ctx.font='8px monospace'; ctx.fillText(`N${i}`,x+4,ry+rh*0.72);
+    ctx.fillStyle=COLS[i];
+    for(let k=0;k<HIST;k++){
+      const idx=(n.hi-HIST+k+HIST*100)%HIST;
+      if(n.sh[idx]) ctx.fillRect(x+26+k*(w-31)/HIST,ry+1,2,rh-2);
+    }
+  }
+}
+
+function drawBottom(ctx,S,W){
+  const[x,y,w,h]=[5,455,W-10,110];
+  ctx.fillStyle='#0d0d1a'; rr(ctx,x,y,w,h); ctx.fill();
+  ctx.strokeStyle='#181828'; ctx.lineWidth=0.7; rr(ctx,x,y,w,h); ctx.stroke();
+  ctx.fillStyle='#484858'; ctx.font='9px monospace';
+  ctx.fillText('CEMI GLOBAL FIELD',x+5,y+14);
+  const mw=Math.floor(w*0.48),lev=Math.min(S.cemi*10,1);
+  ctx.fillStyle='#0a0a14'; ctx.fillRect(x+5,y+19,mw,13);
+  ctx.fillStyle=`hsl(${190-lev*130},65%,50%)`; ctx.fillRect(x+5,y+19,mw*lev,13);
+  ctx.fillStyle='#666'; ctx.font='8px monospace';
+  ctx.fillText(`${(S.cemi*100).toFixed(2)}% active`,x+mw+10,y+29);
+  ctx.fillText(`thr ×${(1-0.38*Math.min(S.cemi*8,1)).toFixed(3)}`,x+mw+95,y+29);
+  ctx.fillStyle='#2a2a3a'; ctx.font='8px monospace'; ctx.fillText('neuron stats:',x+5,y+47);
+  for(let i=0;i<NN;i++){
+    const n=S.ns[i],cx=x+5+(i%3)*230,cy=y+58+Math.floor(i/3)*17;
+    ctx.fillStyle=COLS[i]; ctx.font='9px monospace';
+    ctx.fillText(`N${i} τ=${n.tau}  spk=${n.ns}  r=${n.res.toFixed(3)}  a=${n.ais.toFixed(3)}`,cx,cy);
+  }
+  ctx.fillStyle=learning?'#60e090':'#444'; ctx.font='9px monospace';
+  ctx.fillText(`learn:${learning?'ON  η='+eta.toFixed(3):'OFF'}  sig:${sigType}  t:${S.t}`,x+5,y+h-18);
+  ctx.fillStyle='#202030'; ctx.font='8px monospace';
+  ctx.fillText('v=[x(t), x(t-τ), ..., x(t-5τ)]  →  res=|v·m|²  →  AIS integral  →  spike  →  m+=η(v−dot·m)',x+5,y+h-6);
+}
+
+function drawAll(ctx,canvas,S){
+  const W=canvas.width,H=canvas.height;
+  ctx.fillStyle='#07070f'; ctx.fillRect(0,0,W,H);
+  drawSig(ctx,S,W);
+  drawGrid(ctx,S);
+  drawRaster(ctx,S,W);
+  drawBottom(ctx,S,W);
+}
+
+function loop(){
+  if(running){
+    for(let s=0;s<SPF;s++){
+      const inp=gSig(sigType,sim.t++);
+      sim.sh[sim.si%HIST]=inp; sim.si++;
+      const ps=sim.ns.filter(n=>n.spike).length/NN;
+      sim.cemi=sim.cemi*0.93+ps*0.07;
+      sim.ns.forEach(n=>stepN(n,inp,learning?eta:0,sim.cemi));
+    }
+  }
+  const canvas=document.getElementById('cv');
+  drawAll(canvas.getContext('2d'),canvas,sim);
+  requestAnimationFrame(loop);
+}
+
+function toggleRun(){
+  running=!running;
+  document.getElementById('bRun').textContent=running?'⏸ Pause':'▶ Run';
+}
+function toggleLearn(){
+  learning=!learning;
+  const b=document.getElementById('bLearn');
+  b.textContent=`🧠 Learn ${learning?'ON':'OFF'}`;
+  b.className=learning?'on':'';
+}
+function resetSim(){sim=mkSim();}
+function setSig(t){
+  sigType=t;
+  document.querySelectorAll('.sigbtn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('s'+t[0].toUpperCase()+t.slice(1)).classList.add('active');
+}
+function updateEta(v){eta=v/1000; document.getElementById('etaVal').textContent=eta.toFixed(3);}
+
+sim=mkSim();
+document.getElementById('bLearn').className='on';
+requestAnimationFrame(loop);
+</script>
