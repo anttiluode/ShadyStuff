@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>GAIT Live Vision Processor</title>
+<style>
+  :root {
+    --bg: #07070f;
+    --panel: #11111a;
+    --text-main: #e0e0e0;
+    --text-dim: #707080;
+    --accent: #60e090;
+    --alert: #ff4040;
+    --font: 'Courier New', Courier, monospace;
+  }
+  body {
+    background-color: var(--bg);
+    color: var(--text-main);
+    font-family: var(--font);
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    user-select: none;
+  }
+  canvas {
+    background-color: var(--panel);
+    border: 1px solid #222233;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  }
+  .controls {
+    margin-top: 15px;
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    background: var(--panel);
+    padding: 10px 20px;
+    border-radius: 8px;
+    border: 1px solid #222233;
+    width: 760px;
+    box-sizing: border-box;
+  }
+  button {
+    background: #1e2030;
+    border: 1px solid #333344;
+    color: var(--text-main);
+    padding: 6px 12px;
+    font-family: var(--font);
+    font-size: 13px;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: 0.2s;
+  }
+  button:hover { background: #2a2d40; }
+  input[type="range"] { vertical-align: middle; }
+  .status { font-size: 12px; color: var(--accent); margin-left: auto; }
+</style>
+</head>
+<body>
+
+<canvas id="cv" width="800" height="650"></canvas>
+
+<div class="controls">
+  <button onclick="toggleLearn()" id="bLearn">🧠 Learning: ON</button>
+  <button onclick="resetNetwork()">↺ Reset Network</button>
+  <label style="font-size:12px;color:var(--text-dim);">
+    Learning Rate (η): <input type="range" id="etaSlider" min="1" max="100" value="15" oninput="eta=this.value/1000">
+  </label>
+  <span class="status" id="camStatus">Waiting for Camera...</span>
+</div>
+
+<video id="webcam" autoplay playsinline muted style="display:none;"></video>
+<canvas id="offscreen" width="64" height="48" style="display:none;"></canvas>
+
+<script>
+// --- GAIT SIMULATION CONSTANTS & STATE ---
+const DIM = 6;
+const TAUS = [2, 3, 5, 8, 13, 21];
+const HIST_LEN = 21 * 5 + 1; 
+
+let eta = 0.015;
+let learning = true;
+let base_threshold = 0.85;
+
+// Global signal history
+let signal = new Float32Array(HIST_LEN);
+let sigIdx = 0;
+let signalPlot = new Float32Array(300); // For rendering the graph
+
+// CEMI field (global firing rate, smoothed)
+let cemi = 0.0;
+let spikeHistory = []; // For raster plot (y: neuron index, x: time)
+
+// Neuron definition
+class GeometricNeuron {
+  constructor(index, tau) {
+    this.index = index;
+    this.tau = tau;
+    // Initialize template m to random unit vector
+    this.m = new Float32Array(DIM);
+    for(let i=0; i<DIM; i++) this.m[i] = (Math.random()-0.5)*2;
+    this.normalize(this.m);
+    
+    this.ais = 0.0;
+    this.res = 0.0;
+    this.spike = false;
+    this.v = new Float32Array(DIM); // Current delay vector
+  }
+
+  normalize(vec) {
+    let mag = 0;
+    for(let i=0; i<DIM; i++) mag += vec[i]*vec[i];
+    mag = Math.sqrt(mag) || 1;
+    for(let i=0; i<DIM; i++) vec[i] /= mag;
+  }
+
+  step(currentCEMI) {
+    // 1. Construct Takens delay vector
+    for(let i=0; i<DIM; i++) {
+      let lookback = i * this.tau;
+      let readIdx = (sigIdx - 1 - lookback + HIST_LEN) % HIST_LEN;
+      this.v[i] = signal[readIdx];
+    }
+    
+    // Normalize v to project onto unit hypersphere
+    let v_mag = 0;
+    for(let i=0; i<DIM; i++) v_mag += this.v[i]*this.v[i];
+    v_mag = Math.sqrt(v_mag) || 1;
+    for(let i=0; i<DIM; i++) this.v[i] /= v_mag;
+
+    // 2. Compute Resonance (Hermitian inner product squared)
+    let dot = 0;
+    for(let i=0; i<DIM; i++) dot += this.v[i] * this.m[i];
+    this.res = dot * dot; // 0 to 1
+
+    // 3. AIS Leaky Integration
+    this.ais = this.ais * 0.87 + this.res * 0.13;
+
+    // 4. Ephaptic Threshold (CEMI suppresses threshold)
+    let thresh = base_threshold * (1.0 - currentCEMI * 0.38);
+    
+    this.spike = false;
+    if (this.ais > thresh) {
+      this.spike = true;
+      this.ais = 0.0; // Reset after spike
+      
+      // 5. Oja's Rule (Learn D)
+      if (learning) {
+        for(let i=0; i<DIM; i++) {
+          this.m[i] += eta * (this.v[i] - dot * this.m[i]);
+        }
+        this.normalize(this.m);
+      }
+    }
+  }
+}
+
+let neurons = TAUS.map((tau, i) => new GeometricNeuron(i, tau));
+
+// --- VISION PROCESSING ---
+const video = document.getElementById('webcam');
+const offCanvas = document.getElementById('offscreen');
+const offCtx = offCanvas.getContext('2d', {willReadFrequently: true});
+let hasWebcam = false;
+let prevFrame = null;
+let smoothMotion = 0;
+let t = 0;
+
+navigator.mediaDevices.getUserMedia({video: true})
+  .then(stream => {
+    video.srcObject = stream;
+    hasWebcam = true;
+    document.getElementById('camStatus').textContent = "Camera Active";
+    document.getElementById('camStatus').style.color = "var(--accent)";
+  })
+  .catch(err => {
+    console.warn("Webcam access denied/failed", err);
+    document.getElementById('camStatus').textContent = "No Camera - Using Synthetic Signal";
+    document.getElementById('camStatus').style.color = "var(--alert)";
+  });
+
+function getMotionSignal() {
+  if (!hasWebcam || video.videoWidth === 0) {
+    // Fallback: chaotic multi-frequency oscillator + noise
+    t += 0.1;
+    let s = Math.sin(t) * 0.5 + Math.sin(t*2.3)*0.3 + Math.cos(t*0.4)*0.2;
+    s += (Math.random()-0.5)*0.1;
+    return Math.max(-1, Math.min(1, s));
+  }
+
+  // Draw scaled-down video frame to offscreen canvas
+  offCtx.drawImage(video, 0, 0, 64, 48);
+  let imgData = offCtx.getImageData(0, 0, 64, 48).data;
+  
+  let diff = 0;
+  if (prevFrame) {
+    for (let i = 0; i < imgData.length; i += 4) {
+      // Gray difference
+      let r = Math.abs(imgData[i] - prevFrame[i]);
+      let g = Math.abs(imgData[i+1] - prevFrame[i+1]);
+      let b = Math.abs(imgData[i+2] - prevFrame[i+2]);
+      diff += (r + g + b) / 3;
+    }
+  }
+  prevFrame = new Uint8ClampedArray(imgData);
+  
+  // Calculate average per-pixel diff (0 to 255) -> normalize 0 to 1
+  let rawMotion = (diff / (64 * 48)) / 255.0;
+  
+  // High-pass filter to make it a zero-mean oscillatory signal
+  smoothMotion = smoothMotion * 0.95 + rawMotion * 0.05;
+  let xt = (rawMotion - smoothMotion) * 15.0; // Amplify small movements
+  
+  return Math.max(-1, Math.min(1, xt));
+}
+
+// --- RENDER & UPDATE LOOP ---
+const cv = document.getElementById('cv');
+const ctx = cv.getContext('2d');
+
+function toggleLearn() {
+  learning = !learning;
+  document.getElementById('bLearn').textContent = learning ? "🧠 Learning: ON" : "⏸ Learning: OFF";
+}
+
+function resetNetwork() {
+  neurons = TAUS.map((tau, i) => new GeometricNeuron(i, tau));
+  cemi = 0;
+  spikeHistory = [];
+}
+
+function drawGrid() {
+  ctx.fillStyle = '#07070f';
+  ctx.fillRect(0, 0, cv.width, cv.height);
+  
+  ctx.strokeStyle = '#1a1a24';
+  ctx.lineWidth = 1;
+  for(let i=0; i<cv.width; i+=40) { ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i,cv.height); ctx.stroke(); }
+  for(let i=0; i<cv.height; i+=40) { ctx.beginPath(); ctx.moveTo(0,i); ctx.lineTo(cv.width,i); ctx.stroke(); }
+}
+
+function loop() {
+  // 1. Get Signal
+  let xt = getMotionSignal();
+  
+  // Update global history
+  signal[sigIdx] = xt;
+  sigIdx = (sigIdx + 1) % HIST_LEN;
+  
+  // Update plot history
+  for(let i=1; i<signalPlot.length; i++) signalPlot[i-1] = signalPlot[i];
+  signalPlot[signalPlot.length-1] = xt;
+
+  // 2. Network Step
+  let spikesThisFrame = 0;
+  for(let i=0; i<neurons.length; i++) {
+    neurons[i].step(cemi);
+    if(neurons[i].spike) spikesThisFrame++;
+  }
+  
+  // Update CEMI (leaky average of population firing)
+  cemi = cemi * 0.92 + (spikesThisFrame / DIM) * 0.08;
+
+  // Update Raster History
+  for(let i=0; i<neurons.length; i++) {
+    if(neurons[i].spike) spikeHistory.push({n: i, x: cv.width});
+  }
+  for(let i=spikeHistory.length-1; i>=0; i--) {
+    spikeHistory[i].x -= 2; // scroll speed
+    if(spikeHistory[i].x < 0) spikeHistory.splice(i, 1);
+  }
+
+  // 3. Draw UI
+  drawGrid();
+
+  // Top Section: Video & Signal Plot
+  ctx.fillStyle = '#11111a'; ctx.fillRect(10, 10, 240, 180);
+  ctx.strokeStyle = '#333344'; ctx.strokeRect(10, 10, 240, 180);
+  if(hasWebcam) {
+    ctx.drawImage(video, 10, 10, 240, 180);
+  } else {
+    ctx.fillStyle = '#ff4040'; ctx.font = '12px Courier';
+    ctx.fillText("NO CAMERA", 90, 100);
+  }
+  
+  ctx.fillStyle = '#11111a'; ctx.fillRect(260, 10, 530, 180);
+  ctx.strokeRect(260, 10, 530, 180);
+  ctx.fillStyle = '#707080'; ctx.font = '12px Courier'; ctx.fillText("1D Motion Manifold x(t)", 270, 25);
+  
+  ctx.beginPath();
+  ctx.strokeStyle = '#60e090'; ctx.lineWidth = 1.5;
+  for(let i=0; i<signalPlot.length; i++) {
+    let x = 260 + (i / signalPlot.length) * 530;
+    let y = 100 - signalPlot[i] * 70; // Map -1,1 to 170,30
+    if(i===0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+
+  // Middle Section: Neuron Cards
+  let cardW = 256;
+  let cardH = 110;
+  for(let i=0; i<neurons.length; i++) {
+    let nx = 10 + (i % 3) * (cardW + 12);
+    let ny = 200 + Math.floor(i / 3) * (cardH + 12);
+    let n = neurons[i];
+
+    ctx.fillStyle = '#11111a'; ctx.fillRect(nx, ny, cardW, cardH);
+    ctx.strokeRect(nx, ny, cardW, cardH);
+    
+    ctx.fillStyle = '#aaa'; ctx.font = '14px Courier';
+    ctx.fillText(`N${i} [τ=${n.tau}]`, nx + 10, ny + 20);
+
+    // Draw Template m
+    let bw = 12;
+    for(let j=0; j<DIM; j++) {
+      let v = n.m[j];
+      let bx = nx + 110 + j*15;
+      let by = ny + 35;
+      ctx.fillStyle = '#222233'; ctx.fillRect(bx, by-20, bw, 40);
+      ctx.fillStyle = v > 0 ? '#60e090' : '#ff4040';
+      let bh = Math.abs(v) * 20;
+      if (v > 0) ctx.fillRect(bx, by - bh, bw, bh);
+      else ctx.fillRect(bx, by, bw, bh);
+    }
+    ctx.fillStyle = '#555'; ctx.font='10px Courier'; ctx.fillText('m vector', nx+110, ny+55);
+
+    // Meters
+    ctx.fillStyle = '#333'; ctx.fillRect(nx+10, ny+70, 230, 8);
+    ctx.fillStyle = '#4080ff'; ctx.fillRect(nx+10, ny+70, n.res * 230, 8);
+    ctx.fillText('Resonance |v·m|²', nx+10, ny+65);
+
+    ctx.fillStyle = '#333'; ctx.fillRect(nx+10, ny+95, 230, 8);
+    let athresh = base_threshold * (1.0 - cemi * 0.38);
+    ctx.fillStyle = n.spike ? '#fff' : '#e0a030';
+    ctx.fillRect(nx+10, ny+95, Math.min(1, n.ais/athresh) * 230, 8);
+    
+    // Threshold marker
+    ctx.fillStyle = '#ff4040';
+    ctx.fillRect(nx+10 + (athresh/1.0)*230, ny+90, 2, 18);
+    ctx.fillStyle = '#555'; ctx.fillText('AIS Accumulator', nx+10, ny+90);
+  }
+
+  // Bottom Section: Raster & CEMI
+  let rx = 10, ry = 460, rw = 780, rh = 130;
+  ctx.fillStyle = '#11111a'; ctx.fillRect(rx, ry, rw, rh);
+  ctx.strokeRect(rx, ry, rw, rh);
+  
+  // Draw Raster Spikes
+  ctx.fillStyle = '#fff';
+  for(let s of spikeHistory) {
+    if(s.x > rx && s.x < rx+rw) {
+      let y = ry + 20 + s.n * 16;
+      ctx.fillRect(s.x, y, 2, 10);
+    }
+  }
+  
+  // CEMI Gauge
+  ctx.fillStyle = '#707080'; ctx.font = '12px Courier';
+  ctx.fillText("Global CEMI Field (Population Synchrony)", rx+10, ry+15);
+  ctx.fillStyle = '#222233'; ctx.fillRect(rx+400, ry+6, 370, 10);
+  ctx.fillStyle = '#e0a030'; ctx.fillRect(rx+400, ry+6, cemi * 370, 10);
+
+  requestAnimationFrame(loop);
+}
+
+// Start loop
+loop();
+
+</script>
+</body>
+</html>
