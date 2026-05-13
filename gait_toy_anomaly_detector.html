@@ -1,0 +1,256 @@
+
+<canvas id="cv" width="700" height="480" style="display:block;background:#07070f;border-radius:8px;"></canvas>
+<div style="margin-top:9px;display:flex;gap:7px;flex-wrap:wrap;align-items:center;">
+  <button id="bLock" onclick="lockMonitor()" style="border-color:#60e090;color:#60e090;">▶ Lock &amp; Monitor</button>
+  <button onclick="resetAll()">↺ Reset</button>
+  <span style="color:var(--color-text-secondary);font-size:11px;margin-left:4px;">sensitivity</span>
+  <input type="range" id="senSlider" min="20" max="90" value="50" oninput="sensitivity=this.value/100" style="width:70px;">
+  <span style="width:1px;height:20px;background:var(--color-border-tertiary);display:inline-block;margin:0 4px;"></span>
+  <span style="color:var(--color-text-secondary);font-size:11px;">inject:</span>
+  <button class="ab" onclick="inj('freq')"  style="border-color:#e0a030;color:#e0a030;">freq shift</button>
+  <button class="ab" onclick="inj('noise')" style="border-color:#e06090;color:#e06090;">noise burst</button>
+  <button class="ab" onclick="inj('drop')"  style="border-color:#9060e0;color:#9060e0;">dropout</button>
+  <button class="ab" onclick="inj('fast')"  style="border-color:#ff8050;color:#ff8050;">fast signal</button>
+</div>
+<div style="margin-top:6px;font-size:10px;color:var(--color-text-secondary);font-family:var(--font-mono);">
+  Phase 1: let network learn ~5s → health &gt;60% → Lock &amp; Monitor → inject anomalies
+</div>
+<style>
+button{font-family:var(--font-mono);font-size:11px;padding:4px 11px;border-radius:4px;cursor:pointer;border:0.5px solid var(--color-border-secondary);background:transparent;color:var(--color-text-secondary);}
+button:hover{background:var(--color-background-secondary);}
+button:disabled{opacity:0.35;cursor:default;}
+.ab:disabled{opacity:0.35;}
+</style>
+<script>
+const NN=6,DIM=6,HIST=280,SPF=4;
+const TAUS=[2,3,5,8,13,21];
+const COLS=['#28c8e0','#e06090','#60e090','#e0a030','#9060e0','#ff8050'];
+const _n=()=>(Math.random()-0.5)*0.16;
+const SIG={
+  normal:t=>0.65*Math.sin(t*0.314)+0.42*Math.sin(t*0.816)+0.22*Math.sin(t*1.82)+_n(),
+  freq:  t=>0.7*Math.sin(t*0.20)+0.5*Math.sin(t*0.52)+0.3*Math.sin(t*1.05)+_n(),
+  noise: t=>(Math.random()-0.5)*2.3,
+  drop:  t=>_n()*0.18,
+  fast:  t=>0.65*Math.sin(t*0.942)+0.42*Math.sin(t*2.45)+0.22*Math.sin(t*5.46)+_n(),
+};
+
+function mkN(i){
+  const bl=DIM*TAUS[i]+32,tm=Array.from({length:DIM},()=>Math.random()-0.5);
+  const n0=Math.sqrt(tm.reduce((s,x)=>s+x*x,0));
+  return{i,tau:TAUS[i],buf:new Float32Array(bl),bi:0,tmpl:tm.map(x=>x/n0),
+    res:0,ais:0,thr:0.24,ref:0,spike:false,
+    sh:new Uint8Array(HIST),rh:new Float32Array(HIST),hi:0,ns:0};
+}
+
+function stepN(n,inp,eta,cemi){
+  n.buf[n.bi%n.buf.length]=inp; n.bi++;
+  const bl=n.buf.length,vn=new Float32Array(DIM); let nm=0;
+  for(let j=0;j<DIM;j++){vn[j]=n.buf[((n.bi-1-j*n.tau)%bl+bl)%bl]; nm+=vn[j]*vn[j];}
+  nm=Math.sqrt(nm)+1e-8;
+  for(let j=0;j<DIM;j++) vn[j]/=nm;
+  let dot=0; for(let j=0;j<DIM;j++) dot+=vn[j]*n.tmpl[j];
+  n.res=dot*dot; n.ais=n.ais*0.87+n.res*0.13;
+  const th=n.thr*(1-0.38*Math.min(cemi*8,1));
+  n.spike=false;
+  if(n.ref>0){n.ref--;}
+  else if(n.ais>th){
+    n.spike=true; n.ref=10; n.ns++;
+    if(eta>0){
+      for(let j=0;j<DIM;j++) n.tmpl[j]+=eta*(vn[j]-dot*n.tmpl[j]);
+      const tn=Math.sqrt(n.tmpl.reduce((s,x)=>s+x*x,0))+1e-8;
+      for(let j=0;j<DIM;j++) n.tmpl[j]/=tn;
+    }
+  }
+  n.sh[n.hi%HIST]=n.spike?1:0; n.rh[n.hi%HIST]=n.res; n.hi++;
+}
+
+let sim={ns:Array.from({length:NN},(_,i)=>mkN(i)),sh:new Float32Array(HIST),si:0,t:0,cemi:0};
+let mode='learning',eta=0.008,sensitivity=0.5;
+let baseline=0,detHist=new Float32Array(HIST),detIdx=0;
+let anom={active:false,type:'normal',rem:0};
+let elog=[],alertCD=0,alertOn=false,alertSc=0;
+
+function curScore(){
+  const mr=sim.ns.reduce((s,n)=>s+n.res,0)/NN;
+  return baseline<0.01?0:Math.max(0,1-mr/baseline);
+}
+
+function loop(){
+  for(let s=0;s<SPF;s++){
+    const inp=SIG[anom.active?anom.type:'normal'](sim.t++);
+    sim.sh[sim.si%HIST]=inp; sim.si++;
+    if(anom.active&&--anom.rem<=0){anom.active=false;anom.type='normal';}
+    const ps=sim.ns.filter(n=>n.spike).length/NN;
+    sim.cemi=sim.cemi*0.93+ps*0.07;
+    sim.ns.forEach(n=>stepN(n,inp,mode==='learning'?eta:0,sim.cemi));
+    const mr=sim.ns.reduce((s,n)=>s+n.res,0)/NN;
+    detHist[detIdx%HIST]=mr; detIdx++;
+    if(mode==='learning'){baseline=baseline*0.997+mr*0.003;}
+    else if(baseline>0.01){
+      const sc=curScore(); alertOn=sc>sensitivity; alertSc=sc;
+      if(alertOn&&alertCD<=0){
+        elog.unshift({t:sim.t,type:anom.active?anom.type:'?',sc});
+        if(elog.length>8)elog.pop();
+        alertCD=80;
+      }
+      if(alertCD>0)alertCD--;
+    }
+  }
+  draw();
+  requestAnimationFrame(loop);
+}
+
+function rr(ctx,x,y,w,h,r=3){ctx.beginPath();if(ctx.roundRect)ctx.roundRect(x,y,w,h,r);else ctx.rect(x,y,w,h);}
+function panel(ctx,x,y,w,h){ctx.fillStyle='#0d0d1a';rr(ctx,x,y,w,h);ctx.fill();ctx.strokeStyle='#181828';ctx.lineWidth=0.7;rr(ctx,x,y,w,h);ctx.stroke();}
+function lbl(ctx,t,x,y){ctx.fillStyle='#384050';ctx.font='9px monospace';ctx.fillText(t,x,y);}
+
+function draw(){
+  const cv=document.getElementById('cv'),ctx=cv.getContext('2d'),W=cv.width;
+  ctx.fillStyle='#07070f'; ctx.fillRect(0,0,W,cv.height);
+  dStatus(ctx,W); dSig(ctx,W); dScore(ctx,W); dNeurons(ctx,W); dLog(ctx,W);
+}
+
+function dStatus(ctx,W){
+  panel(ctx,5,5,W-10,42);
+  const mc=mode==='learning'?'#60e090':'#28c8e0';
+  ctx.fillStyle=mc+'16'; rr(ctx,8,8,88,36); ctx.fill();
+  ctx.fillStyle=mc; ctx.font='bold 10px monospace';
+  ctx.fillText(mode==='learning'?'LEARNING':'MONITORING',16,31);
+  const hp=mode==='monitoring'?Math.round((1-curScore())*100):Math.round(Math.min(baseline/0.30*100,100));
+  const hc=alertOn?'#ff4040':hp>60?'#60e090':hp>30?'#e0a030':'#e06060';
+  lbl(ctx,'health',107,18);
+  ctx.fillStyle=hc; ctx.font='bold 22px monospace'; ctx.fillText(hp+'%',107,40);
+  lbl(ctx,'baseline: '+baseline.toFixed(4),200,20);
+  lbl(ctx,'t='+sim.t+'   cemi='+sim.cemi.toFixed(4),200,34);
+  if(mode==='monitoring'){
+    if(alertOn){
+      ctx.fillStyle='#ff404016'; ctx.fillRect(W-205,9,198,34);
+      ctx.strokeStyle='#ff4040'; ctx.lineWidth=1; rr(ctx,W-205,9,198,34); ctx.stroke();
+      ctx.fillStyle='#ff5050'; ctx.font='bold 11px monospace';
+      ctx.fillText('⚠  ANOMALY  '+Math.round(alertSc*100)+'% deviation',W-198,31);
+    } else {
+      ctx.fillStyle='#60e09016'; ctx.fillRect(W-135,9,128,34);
+      ctx.fillStyle='#60e090'; ctx.font='bold 10px monospace';
+      ctx.fillText('✓  SIGNAL NORMAL',W-128,30);
+    }
+  } else {
+    const ready=baseline>0.12;
+    ctx.fillStyle=ready?'#60e090':'#e0a030'; ctx.font='9px monospace';
+    ctx.fillText(ready?'✓ ready to lock':'adapting to signal...',W-200,30);
+  }
+}
+
+function dSig(ctx,W){
+  panel(ctx,5,52,W-10,72);
+  lbl(ctx,'SIGNAL',10,64);
+  if(anom.active){
+    ctx.fillStyle='#ff40400d'; ctx.fillRect(8,55,W-16,66);
+    ctx.fillStyle='#ff6040'; ctx.font='bold 9px monospace';
+    ctx.fillText(anom.type.toUpperCase()+' ANOMALY  '+anom.rem+' steps remaining',W-250,65);
+  }
+  ctx.strokeStyle='#1a1a28'; ctx.lineWidth=0.4;
+  ctx.beginPath(); ctx.moveTo(10,89); ctx.lineTo(W-10,89); ctx.stroke();
+  ctx.strokeStyle='#28c8e0'; ctx.lineWidth=1.2; ctx.beginPath();
+  for(let i=0;i<HIST;i++){
+    const idx=(sim.si-HIST+i+HIST*100)%HIST;
+    const x=10+i*(W-20)/HIST,y=89-sim.sh[idx]*14;
+    i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+  }
+  ctx.stroke();
+}
+
+function dScore(ctx,W){
+  panel(ctx,5,129,W-10,55);
+  lbl(ctx,'ANOMALY SCORE  (0=normal  →  1=anomaly)',10,141);
+  const thr=sensitivity, ty=181-thr*40;
+  ctx.strokeStyle='#ff404044'; ctx.lineWidth=0.8; ctx.setLineDash([4,3]);
+  ctx.beginPath(); ctx.moveTo(10,ty); ctx.lineTo(W-10,ty); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle='#ff404066'; ctx.font='8px monospace';
+  ctx.fillText('threshold '+Math.round(thr*100)+'%',W-90,ty-3);
+  let prevAbove=null; ctx.lineWidth=1.5;
+  for(let i=0;i<HIST;i++){
+    const idx=(detIdx-HIST+i+HIST*100)%HIST;
+    const mr=detHist[idx],sc=baseline>0.01?Math.max(0,1-mr/baseline):0;
+    const x=10+i*(W-20)/HIST,y=181-sc*40,above=sc>thr;
+    if(above!==prevAbove){
+      if(prevAbove!==null){ctx.strokeStyle=prevAbove?'#ff5030':'#40d080'; ctx.stroke();}
+      ctx.beginPath(); ctx.moveTo(x,y); prevAbove=above;
+    } else {i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);}
+  }
+  if(prevAbove!==null){ctx.strokeStyle=prevAbove?'#ff5030':'#40d080'; ctx.stroke();}
+}
+
+function dNeurons(ctx,W){
+  panel(ctx,5,189,W-10,100);
+  lbl(ctx,'NEURON RESONANCE  (white tick = learned baseline)',10,201);
+  const bw=W-95;
+  for(let i=0;i<NN;i++){
+    const n=sim.ns[i],y=205+i*14;
+    ctx.fillStyle=COLS[i]+'99'; ctx.font='8px monospace';
+    ctx.fillText('N'+i+' τ='+n.tau,10,y+10);
+    ctx.fillStyle='#0a0a14'; ctx.fillRect(58,y,bw,11);
+    ctx.fillStyle=COLS[i]; ctx.fillRect(58,y,Math.min(n.res,1)*bw,11);
+    if(baseline>0.01){
+      const bx=58+Math.min(baseline,1)*bw;
+      ctx.strokeStyle='#ffffff33'; ctx.lineWidth=0.8;
+      ctx.beginPath(); ctx.moveTo(bx,y); ctx.lineTo(bx,y+11); ctx.stroke();
+    }
+    ctx.fillStyle='#333'; ctx.font='8px monospace';
+    ctx.fillText(n.res.toFixed(3),W-36,y+10);
+    if(n.spike){ctx.fillStyle=COLS[i]; ctx.fillText('●',W-12,y+10);}
+  }
+}
+
+function dLog(ctx,W){
+  panel(ctx,5,294,W-10,181);
+  lbl(ctx,'DETECTION LOG',10,306);
+  ctx.fillStyle='#1e1e2a'; ctx.fillRect(8,309,W-16,1);
+  ctx.fillStyle='#252535'; ctx.font='8px monospace';
+  ctx.fillText('     time        type              deviation     severity',10,320);
+  if(elog.length===0){
+    ctx.fillStyle='#2a2a3a'; ctx.font='9px monospace';
+    ctx.fillText(mode==='learning'?'→  lock & monitor to begin detection':'→  no anomalies detected yet',22,340);
+  }
+  const TNAMES={freq:'FREQ SHIFT',noise:'NOISE BURST',drop:'DROPOUT',fast:'FAST SIGNAL','?':'UNKNOWN'};
+  for(let i=0;i<Math.min(elog.length,9);i++){
+    const e=elog[i],y=334+i*15;
+    if(i===0&&alertOn){ctx.fillStyle='#ff404010'; ctx.fillRect(8,y-11,W-16,14);}
+    ctx.fillStyle='#40e050'; ctx.font='9px monospace'; ctx.fillText('▶',10,y);
+    ctx.fillStyle=i===0?'#c0c0d0':'#485060'; ctx.font='9px monospace';
+    ctx.fillText('t='+String(e.t).padStart(7),22,y);
+    const tn=(TNAMES[e.type]||e.type).padEnd(14);
+    ctx.fillStyle=i===0?COLS[{freq:3,noise:1,drop:4,fast:5,'?':0}[e.type]||0]:'#485060';
+    ctx.fillText(tn,105,y);
+    const sc=e.sc,bx=265;
+    ctx.fillStyle='#0d0d1a'; ctx.fillRect(bx,y-9,160,10);
+    ctx.fillStyle=sc>0.7?'#ff4040':sc>0.5?'#e0a030':'#60e090';
+    ctx.fillRect(bx,y-9,sc*160,10);
+    ctx.fillStyle='#555'; ctx.fillText(Math.round(sc*100)+'%',bx+168,y);
+  }
+  ctx.fillStyle='#1e2030'; ctx.font='8px monospace';
+  ctx.fillText('geometry shift detected via resonance drop: |v·m|² falls when signal leaves learned attractor basin',10,469);
+}
+
+function lockMonitor(){
+  if(baseline<0.08){return;}
+  mode='monitoring';
+  const b=document.getElementById('bLock');
+  b.textContent='🔒 Monitoring'; b.disabled=true;
+  document.querySelectorAll('.ab').forEach(b=>b.disabled=false);
+}
+function resetAll(){
+  sim={ns:Array.from({length:NN},(_,i)=>mkN(i)),sh:new Float32Array(HIST),si:0,t:0,cemi:0};
+  mode='learning'; baseline=0; detHist=new Float32Array(HIST); detIdx=0;
+  elog=[]; alertCD=0; alertOn=false; alertSc=0; anom={active:false,type:'normal',rem:0};
+  const b=document.getElementById('bLock');
+  b.textContent='▶ Lock & Monitor'; b.disabled=false;
+  document.querySelectorAll('.ab').forEach(b=>b.disabled=true);
+}
+function inj(type){
+  if(mode!=='monitoring')return;
+  anom={active:true,type,rem:160};
+}
+document.querySelectorAll('.ab').forEach(b=>b.disabled=true);
+loop();
+</script>
