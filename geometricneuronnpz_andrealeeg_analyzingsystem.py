@@ -55,14 +55,30 @@ EEG_REGIONS = {"All": [], "Occipital": ['O1', 'O2', 'OZ', 'POZ', 'PO3', 'PO4', '
                "Central": ['C1', 'C2', 'C3', 'C4', 'CZ', 'FC1', 'FC2']}
 
 # --- 1. NEW: SYNTHETIC TOPOLOGICAL CORTEX PARSER ---
+# --- 1. NEW: SYNTHETIC TOPOLOGICAL CORTEX PARSER ---
 def load_synthetic_npz_features(npz_file):
     """Parses the telemetry from the Topological GAIT Cortex"""
     data = np.load(npz_file)
-    res = data['res']       # (Time, Neurons)
-    spikes = data['spikes'] # (Time, Neurons)
-    ais = data['ais']       # (Time, Neurons)
+    res = data['res']       
+    spikes = data['spikes'] 
+    ais = data['ais']       
     
-    n_times, n_neurons = res.shape
+    # Safely handle shapes (Global 1D arrays vs Per-Neuron 2D arrays)
+    if len(spikes.shape) == 2:
+        n_times, n_neurons = spikes.shape
+    else:
+        n_times = len(spikes)
+        n_neurons = 1
+        spikes = spikes.reshape(-1, 1)
+        
+    if len(res.shape) == 1:
+        res = res.reshape(-1, 1)
+        
+    if len(ais.shape) == 1:
+        ais = ais.reshape(-1, 1)
+        
+    n_res_features = res.shape[1]
+    
     fps = 30.0 # Approximate framerate of the simulation
     samples_per_epoch = int(0.5 * fps) # 0.5 second epochs (15 frames)
     
@@ -80,10 +96,15 @@ def load_synthetic_npz_features(npz_file):
         
     all_epochs_features = np.array(all_epochs_features)
     
-    # Generate mock feature names for the heatmap
-    feature_names = [f"N{i}_Resonance" for i in range(n_neurons)] + \
-                    [f"N{i}_Spikes" for i in range(n_neurons)] + \
-                    [f"N{i}_AIS" for i in range(n_neurons)]
+    # Generate dynamic feature names based on what was actually saved
+    feature_names = []
+    if n_res_features == 1:
+        feature_names.append("Global_Resonance")
+    else:
+        feature_names.extend([f"N{i}_Resonance" for i in range(n_res_features)])
+        
+    feature_names.extend([f"N{i}_Spikes" for i in range(n_neurons)])
+    feature_names.extend([f"N{i}_AIS" for i in range(n_neurons)])
                     
     # Normalize features
     mean = np.mean(all_epochs_features, axis=0, keepdims=True)
