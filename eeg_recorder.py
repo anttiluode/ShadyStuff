@@ -126,7 +126,7 @@ class EEG_LabApp:
         # --- EEG Recording State ---
         self.is_recording = False
         self.record_frames = 0
-        self.MAX_FRAMES = 300 # ~10 seconds at 30fps
+        self.MAX_FRAMES = 1200 # ~10 seconds at 30fps
         self.eeg_data = {'cemi': [], 'spikes': [], 'ais': [], 'res': []}
         
         self.cap = cv2.VideoCapture(0)
@@ -140,7 +140,7 @@ class EEG_LabApp:
         self.btn_freeze = tk.Button(ctrl_frame, text="🧠 FREEZE LEARNING", bg="#cc5555", fg="white", font=("Courier", 10, "bold"), command=self.toggle_learning)
         self.btn_freeze.pack(side=tk.LEFT, padx=10)
         
-        self.btn_record = tk.Button(ctrl_frame, text="⏺ RECORD EEG (10s)", bg="#5555cc", fg="white", font=("Courier", 10, "bold"), command=self.start_recording)
+        self.btn_record = tk.Button(ctrl_frame, text="⏺ RECORD EEG", bg="#5555cc", fg="white", font=("Courier", 10, "bold"), command=self.start_recording)
         self.btn_record.pack(side=tk.LEFT, padx=10)
         
         self.status_lbl = tk.Label(ctrl_frame, text="Status: LEARNING ACTIVE", bg="#222", fg="#55cc55", font=("Courier", 12, "bold"))
